@@ -8,6 +8,7 @@ require 'item'
 module Todo
   module CLI
 
+    # add [list name] [todo item] adds a todo item to a list (creating the list, if needed)
     def self.add(list_name, list_item)
       list = List.find_by :name => list_name
       unless list
@@ -20,6 +21,9 @@ module Todo
       list.items.create :task => list_item
     end
 
+    # list shows all incomplete todo items
+    # list [name] shows only items from the given list
+    # list all shows all items, including completed ones (with some visual cue for what is complete)
     def self.list(list_name)
       unless list_name.blank? || list_name == "all"
         lists = List.where :name => list_name
@@ -41,18 +45,21 @@ module Todo
       end
     end
 
+    # done [n] marks the todo item with id n as done
     def self.done(item_id)
       item = Item.find(item_id)
       item.complete!
       puts "Task: #{item.task} is done... Bam!!"
     end
 
-    def self.due (item, time)
+    # due [n] [time] marks a todo item as due on the given date
+    def self.due (item_id, date)
       item = Item.find(item_id)
-      time = item.update_attributes :due_date => time
-      puts "#{item.due_date}"
+      time = item.due!(date)
+      puts "Git-r-done by #{item.due_date}."
     end
-
+    
+    # next picks and shows a random item (choosing one with a due date if there are any)
     def self.next_item
       items = Item.all.reject{ |item| item.is_complete }
       if items.include? :due_date
@@ -64,7 +71,8 @@ module Todo
         puts "#{item.id} #{item.task}"
       end
     end
-
+    
+    # search [string] shows todo items containing the given string # todos-cli
     def self.search(term)
       items = Item.all
       search = items.select do |item|
